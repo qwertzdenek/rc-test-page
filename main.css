@@ -7,6 +7,7 @@
   --primary-hover: #a80000;
   --border: #cdd7ee;
   --message-bg: #8f0000;
+  --error-bg: #7a2200;
 }
 
 * {
@@ -111,6 +112,21 @@ button:hover {
   color: #fff;
   border-radius: 8px;
   font-size: 15px;
+}
+
+#error-banner {
+  display: block;
+  position: sticky;
+  top: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--error-bg);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: monospace;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 @media (max-width: 900px) {

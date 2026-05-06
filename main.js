@@ -10,14 +10,14 @@ var DEFAULT_RETARGETING_HIT = {
   itemId: "54321",
   category: "test_category",
   pageType: "category",
-  consent: 0,
+  consent: 0
 };
 
 var DEFAULT_CONVERSION_HIT = {
   id: 100060883,
   value: 199,
   orderId: "123456",
-  consent: 0,
+  consent: 0
 };
 
 var DEFAULT_LEGACY_TEXT = "{\n  \"seznam_retargeting_id\": 12345,\n  \"seznam_category\": \"test_category\",\n  \"seznam_itemId\": 54321,\n  \"seznam_pagetype\": \"category\",\n  \"rc\": { \"consent\": 0 },\n  \"scmp_sspServerData\": true\n}";
@@ -28,6 +28,7 @@ var DEFAULT_CONVERSION_TEXT = "{\n  \"id\": 100060883,\n  \"value\": 199,\n  \"o
 
 var elements = {
   legacyTextArea: document.getElementById("window-json"),
+  error: document.getElementById("error-banner"),
   retargetingTextArea: document.getElementById("retargeting-json"),
   conversionTextArea: document.getElementById("conversion-json"),
   message: document.getElementById("message"),
@@ -38,18 +39,65 @@ var elements = {
     rcLocal: document.getElementById("rc-local"),
     rcProd: document.getElementById("rc-prod"),
     retargetingHit: document.getElementById("retargeting-hit"),
-    conversionHit: document.getElementById("conversion-hit"),
-  },
+    conversionHit: document.getElementById("conversion-hit")
+  }
 };
 
+function addEventListenerCompat(target, eventName, handler) {
+  if (!target) {
+    return;
+  }
+
+  if (target.addEventListener) {
+    target.addEventListener(eventName, handler, false);
+  } else if (target.attachEvent) {
+    target.attachEvent("on" + eventName, handler);
+  } else {
+    target["on" + eventName] = handler;
+  }
+}
+
 function setMessage(str) {
-  elements.message.textContent = str;
+  setNodeText(elements.message, str);
   elements.message.style.display = "";
   if (str !== "") {
     setTimeout(function() {setMessage("")}, MESSAGE_LIFESPAN);
   } else {
     elements.message.style.display = "none";
   }
+}
+
+function setNodeText(element, text) {
+  if (typeof element.textContent === "string") {
+    element.textContent = text;
+  } else {
+    element.innerText = text;
+  }
+}
+
+function getNodeText(element) {
+  if (typeof element.textContent === "string") {
+    return element.textContent;
+  }
+  return element.innerText;
+}
+
+function appendError(str) {
+  if (!str) {
+    return;
+  }
+
+  var timestamp = new Date().toLocaleTimeString();
+  var nextLine = "[" + timestamp + "] " + str;
+
+  var currentText = getNodeText(elements.error);
+  if (currentText) {
+    setNodeText(elements.error, currentText + "\n" + nextLine);
+  } else {
+    setNodeText(elements.error, nextLine);
+  }
+
+  elements.error.style.display = "";
 }
 
 function isValidJson(str) {
@@ -63,10 +111,13 @@ function isValidJson(str) {
 
 function appendToWindow() {
   var str = elements.legacyTextArea.value;
+  var property;
   if (isValidJson(str)) {
     var obj = JSON.parse(str);
     for (property in obj) {
-      window[property] = obj[property];
+      if (obj.hasOwnProperty(property)) {
+        window[property] = obj[property];
+      }
     }
     setMessage("Properties set on window");
   } else {
@@ -77,6 +128,14 @@ function appendToWindow() {
 function appendScript(url) {
   var tag = document.createElement("script");
   tag.src = url;
+
+  addEventListenerCompat(tag, "error", function() {
+    appendError("Failed to load script: " + url);
+  });
+  tag.onerror = function() {
+    appendError("Failed to load script: " + url);
+  };
+
   document.body.appendChild(tag);
 }
 
@@ -135,13 +194,33 @@ function callRcConversionHit() {
 }
 
 function setListeners() {
-  elements.buttons.appendToWindow.addEventListener("click", appendToWindow);
-  elements.buttons.retargetingDev.addEventListener("click", appendRetargetingDev);
-  elements.buttons.rcDev.addEventListener("click", appendRcDev);
-  elements.buttons.rcLocal.addEventListener("click", appendRcLocal);
-  elements.buttons.rcProd.addEventListener("click", appendRcProd);
-  elements.buttons.retargetingHit.addEventListener("click", callRcRetargetingHit);
-  elements.buttons.conversionHit.addEventListener("click", callRcConversionHit);
+  addEventListenerCompat(elements.buttons.appendToWindow, "click", appendToWindow);
+  addEventListenerCompat(elements.buttons.retargetingDev, "click", appendRetargetingDev);
+  addEventListenerCompat(elements.buttons.rcDev, "click", appendRcDev);
+  addEventListenerCompat(elements.buttons.rcLocal, "click", appendRcLocal);
+  addEventListenerCompat(elements.buttons.rcProd, "click", appendRcProd);
+  addEventListenerCompat(elements.buttons.retargetingHit, "click", callRcRetargetingHit);
+  addEventListenerCompat(elements.buttons.conversionHit, "click", callRcConversionHit);
+}
+
+function setGlobalErrorListeners() {
+  addEventListenerCompat(window, "error", function(event) {
+    event = event || window.event;
+    if (!event) {
+      return;
+    }
+
+    var filename = event.filename || (event.target && event.target.src) || "unknown";
+    var line = event.lineno || 0;
+    var col = event.colno || 0;
+    var message = event.message || "Unknown error";
+    appendError("Error in " + filename + " (" + line + ":" + col + "): " + message);
+  });
+
+  window.onerror = function(message, source, lineno, colno) {
+    appendError("Error in " + (source || "unknown") + " (" + (lineno || 0) + ":" + (colno || 0) + "): " + message);
+    return false;
+  };
 }
 
 function init() {
@@ -150,6 +229,8 @@ function init() {
   elements.retargetingTextArea.value = DEFAULT_RETARGETING_TEXT;
   elements.conversionTextArea.value = DEFAULT_CONVERSION_TEXT;
   elements.message.style.display = "none";
+  elements.error.style.display = "none";
+  setGlobalErrorListeners();
 }
 
 init();
