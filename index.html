@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="main.css" />
+    <title>Retargeting/Conversion test page</title>
+  </head>
+  <body>
+    <main>
+      <h1>Retargeting/Conversion test page</h1>
+      <p id="message"></p>
+      <section class="panel">
+        <h2>Legacy flow (window + script insertion)</h2>
+        <p>
+          Set values on <code>window</code>, then insert script. Legacy scripts read from
+          window during initialization.
+        </p>
+        <label class="input-label" for="window-json">Legacy window object JSON</label>
+        <p class="input-help">Example keys: seznam_retargeting_id, seznam_itemId, rc</p>
+        <textarea
+          name="legacy window properties"
+          id="window-json"
+          cols="30"
+          rows="10"
+        ></textarea>
+        <div class="button-row">
+          <button id="window-append">Append to window</button>
+          <button id="retargeting-dev">Add retargeting DEV</button>
+          <button id="rc-dev">Add rc DEV</button>
+          <button id="rc-local">Add rc Local</button>
+          <button id="rc-prod">Add rc Prod</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Modern flow (direct API calls)</h2>
+        <p>
+          Load <code>rc.js</code>, then call methods directly with an argument object.
+        </p>
+        <div class="modern-grid">
+          <div>
+            <label class="input-label" for="retargeting-json">Retargeting payload JSON</label>
+            <p class="input-help">Object passed directly to <code>rc.retargetingHit</code></p>
+            <textarea
+              name="retargeting call parameters"
+              id="retargeting-json"
+              cols="30"
+              rows="10"
+            ></textarea>
+            <div class="button-row">
+              <button id="retargeting-hit">Call rc.retargetingHit</button>
+            </div>
+          </div>
+          <div>
+            <label class="input-label" for="conversion-json">Conversion payload JSON</label>
+            <p class="input-help">Object passed directly to <code>rc.conversionHit</code></p>
+            <textarea
+              name="conversion call parameters"
+              id="conversion-json"
+              cols="30"
+              rows="10"
+            ></textarea>
+            <div class="button-row">
+              <button id="conversion-hit">Call rc.conversionHit</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <script src="main.js"></script>
+    </main>
+  </body>
+</html>
