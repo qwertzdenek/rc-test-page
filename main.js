@@ -135,6 +135,7 @@ function appendToWindow() {
 function appendScript(url) {
   var tag = document.createElement("script");
   tag.src = url;
+  tag.crossOrigin = "anonymous";
 
   addEventListenerCompat(tag, "error", function() {
     appendError("Failed to load script: " + url);
@@ -211,22 +212,18 @@ function setListeners() {
 }
 
 function setGlobalErrorListeners() {
-  addEventListenerCompat(window, "error", function(event) {
-    event = event || window.event;
-    if (!event) {
-      return;
-    }
-
-    var filename = event.filename || (event.target && event.target.src) || "unknown";
-    var line = event.lineno || 0;
-    var col = event.colno || 0;
-    var message = event.message || "Unknown error";
-    var stack = event.error && event.error.stack ? event.error.stack : "";
-    appendError(buildErrorLog("Error in " + filename + " (" + line + ":" + col + "): " + message, stack));
-  });
-
   window.onerror = function(message, source, lineno, colno, error) {
     var stack = error && error.stack ? error.stack : "";
+
+    if ((message === "Script error." || message === "Script error") && !source && !lineno && !colno) {
+      appendError(
+        "Error details are hidden by browser cross-origin policy (Script error). " +
+        "To see full details, the script response must send CORS headers (for example Access-Control-Allow-Origin) " +
+        "and be loaded with crossorigin=anonymous."
+      );
+      return false;
+    }
+
     appendError(buildErrorLog("Error in " + (source || "unknown") + " (" + (lineno || 0) + ":" + (colno || 0) + "): " + message, stack));
     return false;
   };
