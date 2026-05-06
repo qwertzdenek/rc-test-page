@@ -100,6 +100,13 @@ function appendError(str) {
   elements.error.style.display = "";
 }
 
+function buildErrorLog(message, stack) {
+  if (stack) {
+    return message + "\n" + stack;
+  }
+  return message;
+}
+
 function isValidJson(str) {
   try {
       JSON.parse(str);
@@ -214,11 +221,13 @@ function setGlobalErrorListeners() {
     var line = event.lineno || 0;
     var col = event.colno || 0;
     var message = event.message || "Unknown error";
-    appendError("Error in " + filename + " (" + line + ":" + col + "): " + message);
+    var stack = event.error && event.error.stack ? event.error.stack : "";
+    appendError(buildErrorLog("Error in " + filename + " (" + line + ":" + col + "): " + message, stack));
   });
 
-  window.onerror = function(message, source, lineno, colno) {
-    appendError("Error in " + (source || "unknown") + " (" + (lineno || 0) + ":" + (colno || 0) + "): " + message);
+  window.onerror = function(message, source, lineno, colno, error) {
+    var stack = error && error.stack ? error.stack : "";
+    appendError(buildErrorLog("Error in " + (source || "unknown") + " (" + (lineno || 0) + ":" + (colno || 0) + "): " + message, stack));
     return false;
   };
 }
