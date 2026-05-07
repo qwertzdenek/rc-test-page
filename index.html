@@ -70,6 +70,24 @@
         </div>
       </section>
 
+      <section class="panel">
+        <h2>Identity Storage flow (IS.updateIdentities)</h2>
+        <p>
+          Call <code>IS.updateIdentities</code> directly with identity payload.
+        </p>
+        <label class="input-label" for="identity-settings-json">Identity settings JSON</label>
+        <p class="input-help">Example keys: tid, aid</p>
+        <textarea
+          name="identity settings"
+          id="identity-settings-json"
+          cols="30"
+          rows="10"
+        ></textarea>
+        <div class="button-row">
+          <button id="identity-update">Call IS.updateIdentities</button>
+        </div>
+      </section>
+
       <script src="main.js"></script>
     </main>
   </body>

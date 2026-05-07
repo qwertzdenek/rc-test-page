@@ -26,11 +26,14 @@ var DEFAULT_RETARGETING_TEXT = "{\n  \"rtgId\": 12345,\n  \"itemId\": \"54321\",
 
 var DEFAULT_CONVERSION_TEXT = "{\n  \"id\": 100060883,\n  \"value\": 199,\n  \"orderId\": \"123456\",\n  \"consent\": 0\n}";
 
+var DEFAULT_IDENTITY_SETTINGS_TEXT = "{\n  \"tid\": \"+420123456789\",\n  \"aid\": {\n    \"country\": \"Ceska republika\",\n    \"ct\": \"Praha\",\n    \"sr\": \"Radlicka 10\",\n    \"zp\": \"15000\"\n  }\n}";
+
 var elements = {
   legacyTextArea: document.getElementById("window-json"),
   error: document.getElementById("error-banner"),
   retargetingTextArea: document.getElementById("retargeting-json"),
   conversionTextArea: document.getElementById("conversion-json"),
+  identitySettingsTextArea: document.getElementById("identity-settings-json"),
   message: document.getElementById("message"),
   buttons: {
     appendToWindow: document.getElementById("window-append"),
@@ -39,7 +42,8 @@ var elements = {
     rcLocal: document.getElementById("rc-local"),
     rcProd: document.getElementById("rc-prod"),
     retargetingHit: document.getElementById("retargeting-hit"),
-    conversionHit: document.getElementById("conversion-hit")
+    conversionHit: document.getElementById("conversion-hit"),
+    identityUpdate: document.getElementById("identity-update")
   }
 };
 
@@ -118,10 +122,9 @@ function isValidJson(str) {
 
 function appendToWindow() {
   var str = elements.legacyTextArea.value;
-  var property;
   if (isValidJson(str)) {
     var obj = JSON.parse(str);
-    for (property in obj) {
+    for (var property in obj) {
       if (obj.hasOwnProperty(property)) {
         window[property] = obj[property];
       }
@@ -201,6 +204,39 @@ function callRcConversionHit() {
   setMessage("Called rc.conversionHit");
 }
 
+function getIsApi() {
+  if (window.sznIVA && window.sznIVA.IS && typeof window.sznIVA.IS.updateIdentities === "function") {
+    return window.sznIVA.IS;
+  }
+
+  if (window.IS && typeof window.IS.updateIdentities === "function") {
+    return window.IS;
+  }
+
+  return null;
+}
+
+function callIsUpdateIdentities() {
+  var isApi = getIsApi();
+  if (!isApi) {
+    setMessage("IS.updateIdentities is not available");
+    return;
+  }
+
+  var payload = getJsonFromTextArea(elements.identitySettingsTextArea);
+  if (!payload) {
+    setMessage("Invalid JSON in identity settings");
+    return;
+  }
+
+  try {
+    isApi.updateIdentities(payload);
+    setMessage("Called IS.updateIdentities");
+  } catch (error) {
+    setMessage("IS.updateIdentities failed: " + (error && error.message ? error.message : String(error)));
+  }
+}
+
 function setListeners() {
   addEventListenerCompat(elements.buttons.appendToWindow, "click", appendToWindow);
   addEventListenerCompat(elements.buttons.retargetingDev, "click", appendRetargetingDev);
@@ -209,6 +245,7 @@ function setListeners() {
   addEventListenerCompat(elements.buttons.rcProd, "click", appendRcProd);
   addEventListenerCompat(elements.buttons.retargetingHit, "click", callRcRetargetingHit);
   addEventListenerCompat(elements.buttons.conversionHit, "click", callRcConversionHit);
+  addEventListenerCompat(elements.buttons.identityUpdate, "click", callIsUpdateIdentities);
 }
 
 function setGlobalErrorListeners() {
@@ -234,6 +271,7 @@ function init() {
   elements.legacyTextArea.value = DEFAULT_LEGACY_TEXT;
   elements.retargetingTextArea.value = DEFAULT_RETARGETING_TEXT;
   elements.conversionTextArea.value = DEFAULT_CONVERSION_TEXT;
+  elements.identitySettingsTextArea.value = DEFAULT_IDENTITY_SETTINGS_TEXT;
   elements.message.style.display = "none";
   elements.error.style.display = "none";
   setGlobalErrorListeners();
